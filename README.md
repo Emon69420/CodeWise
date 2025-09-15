@@ -1,6 +1,6 @@
-# Noodl: AI-Powered Codebase Navigator
+# CodeWise: AI-Powered Codebase Navigator
 
-Noodl is a Flask-based web application that allows you to ingest, index, and chat with your code repositories using large language models (LLMs) such as GPT-OSS (via Hugging Face or Ollama). It provides a modern UI for exploring code, saving chat history, and leveraging retrieval-augmented generation (RAG) for code understanding.
+CodeWise is a Flask-based web application that allows you to ingest, index, and chat with your code repositories using large language models (LLMs) such as GPT-OSS (via Hugging Face or Ollama). It provides a modern UI for exploring code, saving chat history, and leveraging retrieval-augmented generation (RAG) for code understanding.
 
 ---
 
@@ -99,7 +99,7 @@ Beauty of NaviGit is that it let's the user go totally offline, does not even ne
 - Install and run [Ollama](https://ollama.com/).
 - Pull a model, e.g.:
   ```bash
-  ollama pull llama3
+  ollama pull gpt-oss
   ```
 - In `rag_repo.py`, comment out the Hugging Face `ask_llm` function and uncomment the Ollama version:
     ```python
