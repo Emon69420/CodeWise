@@ -37,7 +37,7 @@ Create a `.env` file in the project root for sensitive configuration:
 HF_API_KEY=your_huggingface_api_key_here
 ```
 
-- `HF_API_KEY` is required if you use Hugging Face's hosted LLMs.
+- `HF_API_KEY` is required if you use Hugging Face's hosted LLMs. in this version though you can hard code the key in rag_repo.py
 - For Ollama, no API key is needed.
 
 ---
@@ -54,7 +54,7 @@ The app will be available at `http://localhost:5000`.
 
 ### 2. Ingest a Repository
 
-- Enter a GitHub repository URL in the UI.
+- Enter a GitHub repository URL in the UI, or add path to the private repo.
 - (Optional) Provide a GitHub Personal Access Token for private repos.
 - Click "Ingest" to process and index the repository.
 
@@ -77,7 +77,7 @@ Beauty of NaviGit is that it let's the user go totally offline, does not even ne
 
 ### 1. Run the command -> python ingest.py
 
-- Terminal will prompt you to enter the github repo url, and PAT only needed for private repos
+- Terminal will prompt you to enter the github repo url, and PAT only needed for private repos, you may select your local path too
 - After successful ingestion move on to next step
 
 ### 2. Run the command -> python rag_repo.py
@@ -91,7 +91,7 @@ Beauty of NaviGit is that it let's the user go totally offline, does not even ne
 
 ### Using Hugging Face (default)
 
-- Ensure `HF_API_KEY` is set in your `.env`.
+- Ensure `HF_API_KEY` is set in your `.env`. for this version you can hardcode it directly intot rag_repo.py, search for langchain, hard code it inside that function
 - The app will use Hugging Face's GPT-OSS endpoint.
 
 ### Using Ollama (local)
