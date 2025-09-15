@@ -17,7 +17,7 @@ CodeWise is a Flask-based web application that allows you to ingest, index, and 
 
 ## Requirements
 
-- Python 3.9 or newer
+- Python 3.12 or newer
 - Git (for repo ingestion)
 - [Ollama](https://ollama.com/) (optional, for local LLM inference)
 
