@@ -5,8 +5,9 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  /* Gradient background similar to index.html */
-  background: radial-gradient(circle at bottom center, #ff6a3d, #2b2d77 70%);
+  /* Use same background image as index.html */
+  background: url('bg.png') no-repeat center center fixed;
+  background-size: cover;
   color: #f3f3f3;
   font-family: 'Instrument Serif', serif;
 }

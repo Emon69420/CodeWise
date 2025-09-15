@@ -6,7 +6,9 @@ body, html {
     font-family: "Inter", sans-serif;
     display: flex;
     flex-direction: column;
-    background: radial-gradient(circle at bottom center, #ff6a3d, #2b2d77 70%);
+    background: url('bg.png') no-repeat center center fixed;
+    background-size: cover;
+    background-color: #000;
     color: white;
   }
   
@@ -323,4 +325,259 @@ box-shadow: 0 4px 12px rgba(0,0,0,.35);
   padding: 6px 12px;
   border-radius: 6px;
   transition: background 0.2s, color 0.2s;
+}
+
+/* Scope old ingest button styles to the legacy layout only */
+.ingest-flex-row #ingest-btn {
+  background: #333333;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 0 32px;
+  font-size: 1.1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+  min-width: 120px;
+  height: 100%;
+}
+.ingest-flex-row #ingest-btn:hover {
+  background: linear-gradient(90deg, #ff4e9b 0%, #3a3c9e 100%);
+}
+
+/* Landing: spinner */
+.spinner {
+  border: 6px solid #333333;
+  border-top: 6px solid #ff0073;
+  border-radius: 50%;
+  width: 15px;
+  height: 15px;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg);} 
+  100% { transform: rotate(360deg);} 
+}
+
+/* Landing: repo chat box */
+.repo-chat-box {
+  position: relative;
+  margin: 10px auto 0 auto;
+  max-width: 720px;
+  width: min(92vw, 720px);
+  background: rgba(34, 36, 44, 0.726);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px #0003;
+  padding: 24px 24px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+}
+.repo-chat-box-input-row {
+  width: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.send-btn-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between; /* left item (PAT) and right group (actions) */
+  align-items: center;
+  margin-top: 12px;
+  gap: 12px;
+}
+/* Right actions cluster (Local + Send) */
+.actions-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+/* Local button styling to match glass theme */
+.local-btn {
+  padding: 10px 14px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(34, 36, 44, 0.3);
+  color: #f2f2f2;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+.local-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+.local-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+@media (max-width: 600px) {
+  .local-btn { height: 36px; padding: 8px 12px; font-size: 12px; }
+  .actions-right { gap: 8px; }
+}
+.send-btn-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between; /* left item (PAT) and right item (send) */
+  align-items: center;
+  margin-top: 12px;
+  gap: 12px;
+}
+/* Square PAT input to match send button size with expand-on-focus */
+#pat-input {
+  width: 44px; /* collapsed */
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 12px;
+  padding: 0 10px 0 34px; /* room for key icon */
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: transparent;
+  color: #f2f2f2;
+  outline: none;
+  box-shadow: none;
+  font-size: 12px;
+  transition: width 180ms ease, border-color 0.18s, box-shadow 0.18s;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' viewBox='0 0 24 24' stroke='%23d6d6d6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 8a5 5 0 1 1-9.9 1H7v3H4v3H2v4h6v-4h2v-3h2.1A5 5 0 0 1 21 8z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 10px center;
+}
+#pat-input.expanded, #pat-input:focus {
+  width: 344px; /* expanded */
+}
+#pat-input::placeholder { color: #d6d6d6; }
+#pat-input:focus {
+  border-color: #007aff;
+  box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.25) inset;
+}
+@media (max-width: 600px) {
+  #pat-input.expanded, #pat-input:focus { width: 220px; }
+}
+
+.repo-chat-box input[type="text"] {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  outline: none;
+  font-size: 1.18em;
+  padding: 18px 60px 18px 18px;
+  border-radius: 16px;
+  background: transparent;
+  color: #f2f2f2;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  font-family: inherit;
+  box-shadow: 0 2px 8px #0001;
+  margin-bottom: 0;
+  width: 100%;
+  box-sizing: border-box;
+  display: block;
+}
+.repo-chat-box input[type="text"]::placeholder { 
+  color: #d6d6d6;
+  opacity: 0.9;
+}
+.repo-chat-box input[type="text"]:focus {
+  border-color: #007aff;
+  box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.25) inset;
+}
+
+/* Circular send button (not affected by legacy #ingest-btn styles) */
+.repo-chat-box .send-btn,
+.repo-chat-box #ingest-btn.send-btn {
+  background: #ffffff;
+  border: none;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  aspect-ratio: 1 / 1;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px #007aff22;
+  cursor: pointer;
+  transition: background 0.18s, box-shadow 0.18s;
+  padding: 0;
+}
+.repo-chat-box .send-btn svg { width: 20px; height: 20px; }
+.repo-chat-box .send-btn:hover { background: #e6f0ff; box-shadow: 0 4px 16px #007aff44; }
+
+/* Override for send button: transparent bg and orange icon in repo chat box */
+.repo-chat-box #ingest-btn.send-btn,
+.repo-chat-box .send-btn {
+  background: transparent;
+  box-shadow: none;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+.repo-chat-box .send-btn svg {
+  stroke: #ff9800; /* orange */
+}
+.repo-chat-box #ingest-btn.send-btn:hover,
+.repo-chat-box .send-btn:hover {
+  background: rgba(255,255,255,0.08);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.12) inset;
+}
+/* Neutralize legacy id-based hover if present earlier */
+.repo-chat-box #ingest-btn.send-btn:hover { background: rgba(255,255,255,0.08); }
+
+/* Button inline spinner */
+.repo-chat-box .send-btn .btn-spinner {
+  display: none;
+  width: 18px;
+  height: 18px;
+  border: 3px solid rgba(255,255,255,0.25);
+  border-top: 3px solid #ff9800; /* match icon accent */
+  border-radius: 50%;
+  animation: spin 0.85s linear infinite;
+}
+.repo-chat-box .send-btn.loading svg { display: none; }
+.repo-chat-box .send-btn.loading .btn-spinner { display: inline-block; }
+
+@media (max-width: 600px) {
+  .repo-chat-box {
+    max-width: 98vw;
+    width: calc(100vw - 24px);
+    margin: 20px auto 0 auto;
+    padding: 14px 10px 16px 10px;
+  }
+  #pat-input { width: 36px; height: 36px; min-width: 36px; min-height: 36px; }
+  .repo-chat-box .send-btn { width: 36px; height: 36px; }
+  .repo-chat-box .send-btn svg { width: 16px; height: 16px; }
+}
+
+/* Glass-styled PAT link in header (matches input container glass) */
+.linktogit {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(34, 36, 44, 0.726);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  box-shadow: 0 8px 32px #0003;
+  color: #f2f2f2;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+}
+.linktogit:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.24);
+  box-shadow: 0 12px 36px rgba(0,0,0,0.35);
+}
+.linktogit:focus-visible {
+  outline: none;
+  border-color: #007aff66;
+  box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.25) inset;
 }

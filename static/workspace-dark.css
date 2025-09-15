@@ -3,7 +3,8 @@ body, html {
   padding: 0 !important;
   height: 100%;
   font-family: 'Segoe UI', 'Fira Mono', 'Consolas', 'monospace', 'Instrument Serif', serif;
-  background: #1e1e1e;
+  background: url('bg.png') no-repeat center center fixed; /* match landing */
+  background-size: cover;
   color: #d4d4d4;
   overflow: hidden;
 }
@@ -16,7 +17,11 @@ body, html {
 .sidebar {
   width: 260px; min-width: 180px; max-width: 320px;
   overflow-y: auto;
-  background: #23272e;
+  background: #22242C !important; /* solid equivalent of previous glass rgba(34,36,44,0.72) */
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
   color: #d4d4d4;
   border-right: 1px solid #181a20;
   display: flex;
@@ -49,18 +54,19 @@ body, html {
   margin: 0 !important;
   padding: 0 !important;
 }
+/* --- Ensure chat messages don't overlap input --- */
 .chat-history {
   flex: 1;
   overflow-y: auto;
-  padding: 10px 16px;
-  background: #23272e;
+  padding: 12px 14px !important;
+  background: transparent; /* inherit panel glass */
   color: #d4d4d4;
   font-family: 'Fira Mono', 'Consolas', 'monospace';
   font-size: 1em;
   display: flex;
   flex-direction: column;
   margin: 0 !important;
-  padding: 0 !important;
+  padding-bottom: 120px !important; /* leave space for textarea + buttons */
 }
 .chat-input {
   display: flex;
@@ -69,10 +75,13 @@ body, html {
   align-items: stretch;
   background: none;
   border-top: none;
-  padding: 0 0 0 0 !important;
-  border-radius: 0;
+  padding: 10px 0 0 0 !important;
+  border-radius: 10px 10px 0 0;
   gap: 0;
   box-shadow: none;
+  position: relative;
+  z-index: 3; /* keep input above any overlapping content */
+  background: #22242C; /* solid to block content behind */
 }
 .chat-input textarea {
   width: 97%;
@@ -87,7 +96,7 @@ body, html {
   resize: none;
   padding: 12px 16px;
   border: none;
-  background: #494949 !important;
+  background: rgba(73,73,73,0.85) !important;
   color: #ffffff;
   font-family: 'Fira Mono', 'Consolas', 'monospace';
   font-size: 1.08em;
@@ -97,14 +106,14 @@ body, html {
   align-self: center;
 }
 .chat-input textarea:focus, .chat-input textarea:active {
-  background: #232946 !important;
-  color: #e0e0e0;
+  background: rgba(35, 41, 70, 0.95) !important;
+  box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.25) inset;
 }
 .chat-input-row {
   display: flex;
   align-self: center;
   flex-direction: row;
-  gap: 8px;
+  gap: 10px;
   margin-top: 8px;
   margin-bottom: 8px;
   justify-content: center;
@@ -147,12 +156,12 @@ body, html {
   box-shadow: 0 4px 16px 0 #007acc44;
 }
 #context-btn {
-  background: #ee7f1e !important;
-  color: #e0e0e0;
-  font-weight: 500;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #f2f2f2;
 }
 #context-btn:focus, #context-btn:active, #context-btn:hover:not(:disabled) {
-  background: #ff7700 !important;
+  background: rgba(255,255,255,0.12) !important;
   color: #fff;
 }
 #context-btn::before {
@@ -162,10 +171,54 @@ body, html {
   vertical-align: middle;
 }
 #send-btn::before {
-  content: '\1F4E7'; /* envelope emoji as a stand-in for paper plane */
+ 
   font-size: 1.1em;
   margin-right: 7px;
   vertical-align: middle;
+}
+.chat-input-row #context-btn {
+  flex: 0 0 auto;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 12px;
+}
+.chat-input-row #send-btn.send-btn {
+  flex: 0 0 auto;
+  background: transparent !important;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 50%;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
+}
+.chat-input-row #send-btn.send-btn:hover:not(:disabled) {
+  background: rgba(255,255,255,0.08) !important;
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.10) inset;
+}
+.chat-input-row #send-btn.send-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.chat-input-row #send-btn.send-btn .btn-spinner {
+  display: none;
+  width: 18px;
+  height: 18px;
+  border: 3px solid rgba(255,255,255,0.25);
+  border-top: 3px solid #ff9800;
+  border-radius: 50%;
+  animation: spin 0.85s linear infinite;
+}
+.chat-input-row #send-btn.send-btn.loading svg {
+  display: none;
+}
+.chat-input-row #send-btn.send-btn.loading .btn-spinner {
+  display: inline-block;
 }
 @media (max-width: 600px) {
   .chat-input button {
@@ -186,13 +239,14 @@ h3 { margin: 0; padding: 10px; border-bottom: 1px solid #232946; background: #23
 .CodeMirror {
   height: 100% !important;
   font-size: 15px;
-  background: #1e1e1e;
+  background: transparent !important; /* let the glass panel show through */
   color: #d4d4d4;
 }
 #code-editor {
   height: 100%;
 }
-.file { padding-left: 10px; }
+.file { padding-left: 10px; background: transparent !important; }
+.folder > span { background: transparent !important; }
 .folder > span::before {
 
   display: inline-block;
@@ -241,12 +295,15 @@ h3 { margin: 0; padding: 10px; border-bottom: 1px solid #232946; background: #23
   display: block;
 }
 .vscode-titlebar {
-  background: #23272e;
+  background: rgba(34, 36, 44, 0.70);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  box-shadow: 0 4px 18px #0003;
   height: 32px;
   display: flex;
   align-items: center;
   padding: 0 12px;
-  border-bottom: 1px solid #181a20;
   position: relative;
 }
 .vscode-dot {
@@ -280,18 +337,10 @@ h3 { margin: 0; padding: 10px; border-bottom: 1px solid #232946; background: #23
   list-style: none;
   padding-left: 0;
   margin: 0;
-}
-.file, .folder > span {
-  padding: 2px 0 2px 18px;
-  cursor: pointer;
-  user-select: none;
-  font-size: 1em;
-  color: #d4d4d4;
-  display: flex;
-  align-items: center;
+  background: transparent !important;
 }
 .file:hover, .folder > span:hover {
-  background: #2c2c32;
+  background: rgba(255,255,255,0.06) !important;
 }
 .folder > span {
   font-weight: 500;
@@ -326,10 +375,10 @@ h3 { margin: 0; padding: 10px; border-bottom: 1px solid #232946; background: #23
 }
 .current-file {
   padding: 8px 16px;
-  background: #23272e;
+  background: rgba(34, 36, 44, 0.72) !important;
   color: #d4d4d4;
   font-size: 1em;
-  border-bottom: 1px solid #181a20;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10) !important;
   font-family: 'Segoe UI', 'Fira Mono', 'Consolas', 'monospace';
 }
 .vscode-main {
@@ -379,19 +428,26 @@ h3 { margin: 0; padding: 10px; border-bottom: 1px solid #232946; background: #23
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: #1e1e1e;
-  border-right: 1px solid #23272e;
+  background: rgba(34, 36, 44, 0.72) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.10) !important;
+  backdrop-filter: blur(14px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(140%) !important;
+  box-shadow: 0 8px 32px #0003 !important;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
 }
 .chat-panel {
-  width: 260px;
+  width: 360px;
   min-width: 180px;
   max-width: 1800px;
   display: flex;
   flex-direction: column;
-  background: #23272e;
+  background: #22242C !important; /* solid, matches Explorer */
+  border-left: 1px solid rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
   min-height: 0;
   height: 100%;
   overflow-y: auto;
@@ -502,6 +558,19 @@ body::-webkit-scrollbar-track,
   align-self: flex-start;
   margin-right: auto;
 }
+/* typing indicator variant */
+.chat-history .chat-bubble.assistant.typing {
+  opacity: 0.85;
+  background: #1b1f27;
+  color: #cfcfcf;
+  font-style: italic;
+}
+.typing-dots {
+  display: inline-block;
+  width: 24px;
+  text-align: left;
+  margin-left: 4px;
+}
 .chat-history .chat-bubble.system {
   background: #2c2c32;
   color: #bdbdbd;
@@ -525,7 +594,7 @@ body::-webkit-scrollbar-track,
 /* Remove default code block background from marked.js */
 .chat-history pre code {
   background: none !important;
-  color: inherit !portant;
+  color: inherit !important;
   padding: 0;
 }
 
@@ -569,7 +638,7 @@ body::-webkit-scrollbar-track,
   line-height: 1.7;
   max-width: 900px;
   margin: 0 auto;
-  padding: 24px 0;
+  padding: 24px 0 42px; /* extra bottom padding for panel */
 }
 #toolkit-panel h1, #toolkit-panel h2, #toolkit-panel h3, #toolkit-panel h4 {
   font-family: 'Instrument Serif', serif;
@@ -638,13 +707,16 @@ body::-webkit-scrollbar-track,
   flex-direction: column;
   gap: 0;
 }
-#toolkit-dashboard-content {
+#toolkit-modal-dashboard-content {
   color: #e0e0e0;
   font-size: 1.08em;
   line-height: 1.7;
   max-width: 900px;
   margin: 0 auto;
-  padding: 28px 0;
+  padding: 28px 0 42px; /* extra bottom padding; inline may override */
+}
+#toolkit-modal-dashboard-content {
+  margin-bottom: 18px;
 }
 #toolkit-modal-content h1, #toolkit-modal-content h2, #toolkit-modal-content h3, #toolkit-modal-content h4 {
   font-family: 'Instrument Serif', serif;
@@ -695,4 +767,95 @@ body::-webkit-scrollbar-track,
 }
 body.toolkit-modal-open {
   overflow: hidden !important;
+}
+
+/* Improve seamless look when using image in editor */
+.CodeMirror-scroll, .CodeMirror-sizer, .CodeMirror-lines {
+  background: transparent !important;
+}
+/* Keep gutters readable over the image */
+.CodeMirror-gutters {
+  background: rgba(24, 26, 32, 0.45) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* Glassy saved chats cards */
+.savedchats-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)) !important;
+  gap: 24px !important;
+}
+.savedchat-card {
+  background: rgba(34, 36, 44, 0.72) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  backdrop-filter: blur(14px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(140%) !important;
+  box-shadow: 0 8px 32px #0003 !important;
+  border-radius: 14px !important;
+  position: relative !important;
+  overflow: hidden !important;
+  transition: transform 0.18s, box-shadow 0.18s, background 0.18s, border-color 0.18s !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 18px 20px 16px 20px !important; /* inner padding, leave bottom space */
+  min-height: 220px !important; /* consistent height for grid harmony */
+}
+.savedchat-card-title {
+  font-size: 1.06em;
+  font-weight: 700;
+  color: #ffb300;
+  margin: 2px 0 8px 0;
+}
+.savedchat-card-preview {
+  font-size: 0.98em;
+  color: #e0e0e0;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 10; /* clamp to 10 lines */
+  line-clamp: 10; /* standard property */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 10px; /* internal bottom spacing so text doesn’t touch bottom */
+}
+.savedchat-card .card-actions {
+  margin-top: auto; /* reserve bottom area if actions are added later */
+  padding-top: 6px;
+}
+@media (max-width: 700px) {
+  .savedchats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+@media (max-width: 440px) {
+  .savedchats-grid { grid-template-columns: 1fr !important; }
+}
+
+/* Full saved chat view */
+.savedchat-full {
+  background: transparent !important; /* remove blue background */
+  color: #e6e6e6;
+  font-size: 1.02em;
+  line-height: 1.6;
+  padding-bottom: 18px; /* ensure last line doesn't touch the border */
+}
+.savedchat-full h1, .savedchat-full h2, .savedchat-full h3, .savedchat-full h4 {
+  color: #ffb300;
+  font-family: 'Instrument Serif', serif;
+}
+.savedchat-full pre, .savedchat-full code {
+  background: #2a2a2a !important;
+  color: #f2f2f2 !important;
+  border-radius: 8px;
+  padding: 2px 6px;
+}
+.savedchat-full pre {
+  padding: 12px 14px;
+  overflow: auto;
+  box-shadow: 0 1px 6px #0003;
+  margin: 12px 0;
+}
+#toolkit-modal-dashboard-content {
+  /* ensure content doesn’t touch the bottom of the modal scroll area */
+  margin-bottom: 18px;
 }

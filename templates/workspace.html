@@ -18,6 +18,24 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.9/mode/jsx/jsx.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.9/mode/javascript/typescript.min.js"></script>
 
+  <style>
+    .chat-panel {
+      position: relative !important;
+      overflow: hidden !important;
+    }
+    #chat-welcome {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(24,26,32,0.98);
+      transition: opacity 0.3s;
+      pointer-events: auto;
+    }
+  </style>
 </head>
 <body>
   <script>
@@ -76,12 +94,40 @@
     </div>
     <div class="resizer" id="chat-resizer"></div>
     <div class="chat-panel">
-      <div id="chat-history" class="chat-history"></div>
+      <div class="chat-history-container" style="position:relative;flex:1;min-height:0;">
+        <div id="chat-welcome" style="display:flex;flex-direction:column;align-items:center;justify-content:center;position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;background:rgba(24,26,32,0.98);transition:opacity 0.3s;">
+          <div style="margin-bottom:18px;">
+            <!-- PC/computer icon -->
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Computer">
+              <title>Computer</title>
+              <!-- Monitor bezel -->
+              <rect x="6" y="8" width="52" height="36" rx="4" fill="#232946"/>
+              <!-- Screen -->
+              <rect x="10" y="12" width="44" height="28" rx="3" fill="#181a20"/>
+              <!-- Window/content accents -->
+              <rect x="14" y="16" width="18" height="6" rx="2" fill="#2c3040"/>
+              <rect x="14" y="26" width="36" height="4" rx="2" fill="#2c3040"/>
+              <rect x="14" y="32" width="28" height="4" rx="2" fill="#2c3040"/>
+              <!-- Power LED -->
+              <circle cx="50" cy="40" r="2" fill="#ffb300"/>
+              <!-- Stand -->
+              <rect x="28" y="46" width="8" height="6" rx="1" fill="#232946"/>
+              <rect x="20" y="52" width="24" height="4" rx="2" fill="#232946"/>
+            </svg>
+          </div>
+          <div style="font-size:1.35em;font-family:'Instrument Serif',serif;color:#ffb300;font-weight:bold;margin-bottom:10px;">Welcome to Repo Copilot Chat</div>
+          <div style="color:#e0e0e0;font-size:1.08em;text-align:center;max-width:340px;">Ask anything about this codebase!<br>Start by typing your question below.<br><br><span style='color:#aaa;font-size:0.98em;'>Your chat is private to this session.</span></div>
+        </div>
+        <div id="chat-history" class="chat-history" style="height:100%;overflow:auto;"></div>
+      </div>
       <div class="chat-input">
         <textarea id="chat-input" rows="2" placeholder="Ask about this repo..."></textarea>
         <div class="chat-input-row">
           <button id="context-btn" type="button">Context</button>
-          <button id="send-btn" disabled>Send</button>
+          <button id="send-btn" class="send-btn" title="Send" aria-label="Send" disabled>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff9800" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            <span class="btn-spinner" aria-hidden="true"></span>
+          </button>
         </div>
       </div>
       <div id="context-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:10000; align-items:center; justify-content:center;">
@@ -468,6 +514,58 @@
     let chatHistoryDiv = document.getElementById('chat-history');
     let chatInput = document.getElementById('chat-input');
     let sendBtn = document.getElementById('send-btn');
+    let chatWelcomeDiv = document.getElementById('chat-welcome');
+
+    // Typing indicator state
+    let typingInterval = null;
+    let typingDiv = null;
+    function showTypingIndicator() {
+      // ensure only one
+      clearTypingIndicator();
+      typingDiv = document.createElement('div');
+      typingDiv.className = 'chat-bubble assistant typing';
+      const textSpan = document.createElement('span');
+      textSpan.textContent = 'typing';
+      const dotsSpan = document.createElement('span');
+      dotsSpan.className = 'typing-dots';
+      dotsSpan.textContent = '.';
+      typingDiv.appendChild(textSpan);
+      typingDiv.appendChild(dotsSpan);
+      chatHistoryDiv.appendChild(typingDiv);
+      chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
+      hideWelcomeIfNeeded();
+      let dots = 1;
+      typingInterval = setInterval(() => {
+        dots = (dots % 2) + 1; // 1..3
+        dotsSpan.textContent = '.'.repeat(dots);
+        // keep scrolled to bottom if newlines push height
+        chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
+      }, 450);
+    }
+    function clearTypingIndicator() {
+      if (typingInterval) {
+        clearInterval(typingInterval);
+        typingInterval = null;
+      }
+      if (typingDiv && typingDiv.parentElement) {
+        typingDiv.parentElement.removeChild(typingDiv);
+      }
+      typingDiv = null;
+    }
+
+    function hideWelcomeIfNeeded() {
+      if (chatHistoryDiv.children.length > 0) {
+        chatWelcomeDiv.style.opacity = 0;
+        setTimeout(()=>{ chatWelcomeDiv.style.display = 'none'; }, 300);
+      }
+    }
+
+    function showWelcomeIfEmpty() {
+      if (chatHistoryDiv.children.length === 0) {
+        chatWelcomeDiv.style.display = 'flex';
+        setTimeout(()=>{ chatWelcomeDiv.style.opacity = 1; }, 10);
+      }
+    }
 
     function appendChat(role, content) {
       const msgDiv = document.createElement('div');
@@ -517,6 +615,7 @@
       }
       chatHistoryDiv.appendChild(msgDiv);
       chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
+      hideWelcomeIfNeeded();
     }
 
     function connectChatSocket() {
@@ -527,15 +626,22 @@
       });
       socket.on('repo_initialized', () => {
         sendBtn.disabled = false;
-        // No 'Chat ready.' message in chat history
       });
       socket.on('chat_reply', (data) => {
+        clearTypingIndicator();
         appendChat('assistant', data.reply);
+        sendBtn.classList.remove('loading');
+        sendBtn.disabled = false;
       });
       socket.on('error', (data) => {
+        clearTypingIndicator();
         appendChat('system', 'Error: ' + (data.error || 'Unknown error'));
+        sendBtn.classList.remove('loading');
+        sendBtn.disabled = false;
       });
       socket.on('disconnect', () => {
+        clearTypingIndicator();
+        sendBtn.classList.remove('loading');
         sendBtn.disabled = true;
         appendChat('system', 'Chat disconnected.');
       });
@@ -546,6 +652,10 @@
       const message = chatInput.value.trim();
       if (!message || !socket || socket.disconnected) return;
       appendChat('user', message);
+      window.lastUserMessage = message;
+      sendBtn.classList.add('loading');
+      sendBtn.disabled = true;
+      showTypingIndicator();
       socket.emit('chat_message', { message, context_files: selectedContextFiles });
       chatInput.value = '';
     }
@@ -559,7 +669,10 @@
       }
     });
 
-    window.addEventListener('DOMContentLoaded', connectChatSocket);
+    window.addEventListener('DOMContentLoaded', function() {
+      connectChatSocket();
+      showWelcomeIfEmpty();
+    });
 
     // Spinner animation
     const style = document.createElement('style');
@@ -584,13 +697,15 @@
             return;
           }
           listDiv.innerHTML = '';
-          listDiv.className = 'savedchats-grid'; // Add grid class for 3-column layout
+          listDiv.className = 'savedchats-grid';
           data.chats.forEach(chat => {
             const chatDiv = document.createElement('div');
             chatDiv.className = 'savedchat-card';
-            chatDiv.innerHTML = `<div style='font-size:1.08em;font-weight:bold;color:#ffb300;margin-bottom:8px;'>${chat.filename.slice(0, -3)}</div>` +
-              `<div style='font-size:0.98em;white-space:pre-line;'>${chat.preview}</div>` +
-              `<button style='position:absolute;top:18px;right:18px;background:none;border:none;color:#ffb300;font-size:1.2em;cursor:pointer;' title='View Full'></button>`;
+            chatDiv.innerHTML = `
+              <div class='savedchat-card-title'>${chat.filename.slice(0, -3)}</div>
+              <div class='savedchat-card-preview'>${chat.preview}</div>
+              <button style='position:absolute;top:18px;right:18px;background:none;border:none;color:#ffb300;font-size:1.2em;cursor:pointer;' title='View Full'></button>
+            `;
             chatDiv.querySelector('button').onclick = function(e) {
               e.stopPropagation();
               showSavedChatFull(chat.filename);
@@ -616,17 +731,22 @@
             listDiv.innerHTML = '<div style="color:#ff5252;">Failed to load chat.</div>';
             return;
           }
-          // Add row with back and add to chat buttons
+          // Trim the first line if it is a leading Q header like "# Q: ..." or "Q: ..."
+          const raw = data.content || '';
+          const lines = raw.split(/\r?\n/);
+          if (lines.length && /^#?\s*Q\s*:/i.test(lines[0].trim())) {
+            lines.shift();
+          }
+          const sanitized = lines.join('\n').trim();
+
           listDiv.innerHTML =
             `<div style='margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;'>\
               <button onclick='showSavedChatsPanel()' style='background:none;border:none;color:#ffb300;font-size:1.1em;cursor:pointer;'>&larr; Back to list</button>\
               <button id='add-to-chat-btn' style='background:#ffb300;border:none;color:#181a20;font-size:1em;cursor:pointer;padding:7px 18px;border-radius:7px;font-weight:bold;'>Add to Chat</button>\
             </div>` +
-            `<div style='font-size:1.01em;background:#232946;padding:18px 22px;border-radius:10px;'>${marked.parse(data.content)}</div>`;
-          // Attach event handler after rendering
+            `<div class='savedchat-full'>${marked.parse(sanitized)}</div>`;
           document.getElementById('add-to-chat-btn').onclick = function() {
-            addSavedChatToChat(data.content);
-            // Close the modal
+            addSavedChatToChat(sanitized);
             document.getElementById('savedchats-modal').style.display = 'none';
             document.body.style.overflow = '';
             document.querySelector('.vscode-main').style.filter = '';
@@ -638,34 +758,6 @@
       chatInput.value += (chatInput.value ? '\n' : '') + content;
       chatInput.focus();
     }
-
-    // Add CSS for grid layout and square cards
-    const styleGrid = document.createElement('style');
-    styleGrid.innerHTML = `
-      .savedchats-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 28px 24px;
-      }
-      .savedchat-card {
-        background: #23272e;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px #0002;
-        position: relative;
-        cursor: pointer;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-        align-items: flex-start;
-        aspect-ratio: 1 / 1;
-        min-width: 0;
-        min-height: 0;
-        padding: 18px 22px;
-        margin-bottom: 0;
-        overflow: hidden;
-      }
-    `;
-    document.head.appendChild(styleGrid);
   </script>
   <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>

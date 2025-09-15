@@ -49,11 +49,19 @@ def nested_dict():
 
 def build_tree_from_local(repo_path: str):
     """
-    Walk the local repo and return a nested dict {folder: {sub: {files}}}.
+    Walk the local repo and return a nested dict {folder: {sub: {files}}}, excluding node_modules and handling permission errors gracefully.
+    Also logs the top-level folders being loaded.
     """
     tree = nested_dict()
-    for root, dirs, files in os.walk(repo_path):
+    top_level_dirs = set()
+    for root, dirs, files in os.walk(repo_path, topdown=True):
+        # Exclude node_modules folder
+        dirs[:] = [d for d in dirs if d != "node_modules"]
         rel_path = os.path.relpath(root, repo_path)
+        # Track top-level folders
+        if rel_path == ".":
+            for d in dirs:
+                top_level_dirs.add(d)
         if rel_path == ".":
             current = tree
         else:
@@ -61,14 +69,19 @@ def build_tree_from_local(repo_path: str):
             current = tree
             for p in parts:
                 current = current[p]
-
         for f in files:
+            file_path = os.path.join(root, f)
             try:
-                with open(os.path.join(root, f), "r", encoding="utf-8", errors="replace") as fh:
-                    content = fh.read()
+                # Only read text files, skip binaries and large files
+                if os.path.getsize(file_path) > 2 * 1024 * 1024:  # 2MB limit
+                    content = "[File too large to display]"
+                else:
+                    with open(file_path, "r", encoding="utf-8", errors="replace") as fh:
+                        content = fh.read()
             except Exception as e:
                 content = f"Error reading file: {e}"
             current[f] = content
+    logger.info(f"Top-level folders in {repo_path}: {sorted(top_level_dirs)}")
     return tree
     
 def list_available_repos(output_dir="gitingest_outputs"):
@@ -101,8 +114,17 @@ def loading(owner, repo):
 @app.route("/workspace/<owner>/<repo>")
 def workspace(owner, repo):
     repo_path = os.path.join("my_repos", owner, repo)
+
+    # Check if the repo is a local folder with a repopath.txt file
+    repopath_file = os.path.join(repo_path, "repopath.txt")
+    if os.path.exists(repopath_file):
+        with open(repopath_file, "r", encoding="utf-8") as f:
+            repo_path = f.read().strip()
+
     if not os.path.exists(repo_path):
         return f"Repo {owner}/{repo} not found locally", 404
+
+    logger.info(f"Loading workspace from path: {repo_path}")
 
     file_tree = build_tree_from_local(repo_path)
     return render_template("workspace.html", owner=owner, repo=repo, file_tree=file_tree)
@@ -223,7 +245,7 @@ def chat(repo):
     session[session_key] = history
 
     # Build context from last 5 messages
-    context = "\n".join([f"{m['role']}: {m['content']}" for m in history])
+    context = "\n".join([f"{m['role']}: {m['content']}"] for m in history)
 
     # Load RAG objects for this repo
     try:

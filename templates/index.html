@@ -23,15 +23,25 @@
     <h1>Get the gist before the first sip</h1>
     <p>Ingest repos and chat with your code</p>
 
-    <!-- Repo input -->
-    <div class="ingest-flex-row">
-      <div class="input-container repo-input">
-        <input type="text" id="repo-link" name="repo-link" placeholder="Enter GitHub repo URL" required>
+    <div class="repo-chat-box">
+      <div class="repo-chat-box-input-row">
+        <input type="text" id="repo-link" name="repo-link" placeholder="Enter GitHub repo URL" required autocomplete="off" />
+        <div class="send-btn-row">
+          <!-- PAT input (left-aligned) -->
+          <input type="password" id="pat-input" name="pat-input" placeholder="PAT" title="GitHub Personal Access Token" aria-label="GitHub Personal Access Token" autocomplete="off" />
+          <!-- Right action cluster: Local + Send -->
+          <div class="actions-right">
+            <button type="button" id="local-btn" class="local-btn" title="Use a local folder" aria-label="Use local codebase">Use local codebase</button>
+            <button id="ingest-btn" class="send-btn" title="Ingest" aria-label="Ingest repository">
+              <!-- Send icon -->
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+              <!-- Inline button spinner (hidden by default; shown when .loading on button) -->
+              <span class="btn-spinner" aria-hidden="true"></span>
+            </button>
+          </div>
+        </div>
+        <!-- Removed hidden directory input to guarantee no file selection/upload occurs -->
       </div>
-      <div class="input-container pat-input">
-        <input type="password" id="pat-input" placeholder="GitHub PAT (For Private Repos)">
-      </div>
-      <button type="submit" id="ingest-btn" form="ingest-form">Ingest</button>
     </div>
     <form id="ingest-form" style="display:none;"></form>
     <div id="loading" style="display:none;">
@@ -50,26 +60,35 @@
       </div>
     </div>
   </div>
-  <style>
-  .spinner {
-    border: 6px solid #333333;
-    border-top: 6px solid #ff0073;
-    border-radius: 50%;
-    width: 15px;
-    height: 15px;
-    animation: spin 1s linear infinite;
-
-  }
-  @keyframes spin {
-    0% { transform: rotate(0deg);}
-    100% { transform: rotate(360deg);}
-  }
-  </style>
   <script>
+  // Directory picker flow: path-only, no file selection or uploads
+  const repoInput = document.getElementById('repo-link');
+  document.getElementById('local-btn').onclick = async function(e) {
+    e.preventDefault();
+    let folderName = '';
+    if (window.showDirectoryPicker) {
+      try {
+        const dirHandle = await window.showDirectoryPicker();
+        folderName = dirHandle && dirHandle.name ? dirHandle.name : '';
+      } catch (err) {
+        // User canceled; continue to prompt for path
+      }
+    }
+    const promptMsg = `Paste the full local folder path${folderName ? ` for "${folderName}"` : ''} (e.g., C:\\dev\\my-project or /Users/me/code/my-project):`;
+    const prefill = repoInput.value.trim();
+    const fullPath = window.prompt(promptMsg, prefill);
+    if (fullPath && fullPath.trim()) {
+      repoInput.value = fullPath.trim();
+      repoInput.placeholder = 'Local folder path';
+      repoInput.focus();
+    }
+  };
+
   document.getElementById('ingest-btn').onclick = async function(e) {
     e.preventDefault();
-    document.getElementById('loading').style.display = 'block';
-    document.getElementById('ingest-btn').style.display = 'none';
+    const btn = document.getElementById('ingest-btn');
+    btn.classList.add('loading');
+    btn.disabled = true;
     document.getElementById('result').innerText = '';
     const repo = document.getElementById('repo-link').value;
     const pat = document.getElementById('pat-input').value;
@@ -80,17 +99,22 @@
         body: JSON.stringify({repo_link: repo, github_token: pat})
       });
       const data = await res.json();
-      document.getElementById('loading').style.display = 'none';
       if (data.success) {
         location.reload();
       } else {
-        document.getElementById('result').innerText = 'Error: ' + data.error;
-        document.getElementById('ingest-btn').style.display = '';
+        const err = (data.error || '').toString();
+        let msg = 'Error: ' + err;
+        const low = err.toLowerCase();
+        if (low.includes('token') || low.includes('github_token') || low.includes('pat') || low.includes('unauthorized') || low.includes('401')) {
+          msg = 'Authentication failed. Please provide a valid GitHub token (PAT) if the repo is private or rate-limited.';
+        }
+        document.getElementById('result').innerText = msg;
       }
     } catch (err) {
-      document.getElementById('loading').style.display = 'none';
       document.getElementById('result').innerText = 'Request failed.';
-      document.getElementById('ingest-btn').style.display = '';
+    } finally {
+      btn.classList.remove('loading');
+      btn.disabled = false;
     }
   };
   </script>

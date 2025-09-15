@@ -81,7 +81,7 @@ class RepoIngestor:
     # ------------------------------
     # Run gitingest
     # ------------------------------
-    def run_gitingest(self, repo_url: str, output_file: str) -> Dict[str, Any]:
+    def  run_gitingest(self, repo_input: str, output_file: str) -> Dict[str, Any]:
         """Run gitingest and return structured text."""
         temp_file = None
         try:
@@ -90,15 +90,15 @@ class RepoIngestor:
                 os.close(fd)
                 output_file = temp_file
 
-            cmd = ["gitingest", repo_url, "--output", output_file]
-            if self.github_token:
+            cmd = ["gitingest", repo_input, "--output", output_file]
+            if self.github_token and not os.path.isdir(repo_input):
                 cmd.extend(["--token", self.github_token])
 
             env = os.environ.copy()
-            if self.github_token:
+            if self.github_token and not os.path.isdir(repo_input):
                 env["GITHUB_TOKEN"] = self.github_token
 
-            logger.info(f"Running gitingest on {repo_url}")
+            logger.info(f"Running gitingest on {repo_input}")
             result = subprocess.run(
                 cmd,
                 capture_output=True,
@@ -110,15 +110,15 @@ class RepoIngestor:
             )
 
             if result.returncode != 0:
-                return {"success": False, "error": result.stderr.strip(), "repo_url": repo_url}
+                return {"success": False, "error": result.stderr.strip(), "repo_input": repo_input}
 
             with open(output_file, "r", encoding="utf-8", errors="replace") as f:
                 structured_text = f.read()
 
-            return {"success": True, "structured_text": structured_text, "repo_url": repo_url}
+            return {"success": True, "structured_text": "File Successfully Ingested!", "repo_input": repo_input}
 
         except Exception as e:
-            return {"success": False, "error": str(e), "repo_url": repo_url}
+            return {"success": False, "error": str(e), "repo_input": repo_input}
         finally:
             if temp_file and os.path.exists(temp_file):
                 try:
@@ -152,13 +152,55 @@ class RepoIngestor:
         return False
 
     # ------------------------------
+    # Helpers to detect URL vs local path
+    # ------------------------------
+    def _is_probable_git_url(self, s: str) -> bool:
+        s = (s or "").strip()
+        return bool(re.match(r"^(https?://|git@|ssh://)", s)) or "github.com" in s
+
+    def _normalize_local_path(self, s: str) -> str:
+        p = (s or "").strip().strip('"').strip("'")
+        p = os.path.expanduser(p)
+        p = os.path.expandvars(p)
+        return str(Path(p))
+
+    # ------------------------------
     # High level API
     # ------------------------------
-    def ingest_repo(self, repo_url: str, output_dir="gitingest_outputs", clone=True, indexes_dir="indexes") -> Dict[str, Any]:
+    def ingest_repo(self, repo_input: str, output_dir="gitingest_outputs", clone=True, indexes_dir="indexes") -> Dict[str, Any]:
         """Save gitingest output and optionally clone repo locally. Also checks and deletes existing index data."""
         Path(output_dir).mkdir(exist_ok=True)
-        owner, repo = self.parse_github_url(repo_url)
-        repo_name = f"{owner}_{repo}"
+
+        # Sanitize input
+        if not repo_input or not str(repo_input).strip():
+            return {"success": False, "error": "No repository URL or local path provided."}
+        raw_input = str(repo_input).strip()
+
+        is_url = self._is_probable_git_url(raw_input)
+        owner = None
+        repo = None
+
+        if not is_url:
+            # Treat as local path; require it to exist
+            local_path = self._normalize_local_path(raw_input)
+            if not os.path.isdir(local_path):
+                return {"success": False, "error": f"Local path not found or not a directory: {local_path}"}
+            repo_path = Path(local_path).resolve()
+            owner = "Local"
+            repo = repo_path.name
+
+            # Save the local repository path in a .txt file under my_repos/Local/<repo_name>/repopath.txt
+            local_repo_dir = Path("my_repos") / owner / repo
+            local_repo_dir.mkdir(parents=True, exist_ok=True)
+            local_repo_file = local_repo_dir / "repopath.txt"
+            with open(local_repo_file, "w", encoding="utf-8") as f:
+                f.write(str(repo_path))
+
+            effective_input = str(repo_path)
+        else:
+            # Git URL
+            owner, repo = self.parse_github_url(raw_input)
+            effective_input = raw_input
 
         # Check and delete existing index data if present
         if self.repo_index_exists(repo, indexes_dir=indexes_dir):
@@ -167,20 +209,21 @@ class RepoIngestor:
         timestamp = __import__("datetime").datetime.now().strftime("%Y%m%d_%H%M%S")
         output_file = f"{output_dir}/{owner}_{repo}_{timestamp}.txt"
 
-        # Run gitingest
-        result = self.run_gitingest(repo_url, output_file)
-        if not result["success"]:
+        # Run gitingest (for URL or local path)
+        result = self.run_gitingest(effective_input, output_file)
+        if not result.get("success"):
             return result
 
         result["output_file"] = output_file
         logger.info(f"Structured output saved: {output_file}")
 
-        if clone:
+        # Clone only for URL inputs
+        if clone and is_url and not os.path.isdir(effective_input):
             try:
-                local_path = self.clone_repo(repo_url)
+                local_path = self.clone_repo(effective_input)
                 result["local_repo"] = local_path
             except Exception as e:
-                logger.warning(f"Repo cloned skipped: {e}")
+                logger.warning(f"Repo clone skipped: {e}")
                 result["local_repo"] = None
 
         return result
@@ -189,22 +232,47 @@ class RepoIngestor:
 # ------------------------------
 # CLI for testing
 # ------------------------------
-def main():
-    github_token = input("🔑 Enter GitHub Personal Access Token (leave blank for public repo): ").strip() or None
-    processor = RepoIngestor(github_token)
+def prompt_repo_input() -> tuple[str, str | None]:
+    print("\nSelect input type:")
+    print("  [1] Git URL (e.g., https://github.com/owner/repo.git)")
+    print("  [2] Local repo path (e.g., C:\\dev\\myproject)")
+    choice = input("Enter 1 or 2: ").strip()
+    while choice not in {"1", "2"}:
+        choice = input("Please enter 1 or 2: ").strip()
 
-    repo_url = input("Enter GitHub repo URL: ").strip()
-    result = processor.ingest_repo(repo_url, clone=True)
+    if choice == "1":
+        url = input("Enter Git repo URL: ").strip()
+        token = input("Enter GitHub token (leave blank if not needed): ").strip() or None
+        return url, token
 
-    if result["success"]:
-        print("\Ingestion successful!")
-        print(f"Structured output: {result['output_file']}")
-        if result.get("local_repo"):
-            print(f"Local repo clone: {result['local_repo']}")
-        preview = result["structured_text"][:200].replace("\n", " ") + "..."
-        print(f"Preview: {preview}")
+    while True:
+        path = input("Enter local repo path: ").strip().strip('"').strip("'")
+        path = os.path.expanduser(path)
+        if os.path.isdir(path):
+            return path, None
+        print(f"Path not found or not a directory: {path}. Try again.\n")
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Ingest a repo from URL or local path")
+    parser.add_argument("--repo", help="Git URL or local path to repo")
+    parser.add_argument("--token", help="GitHub token for private repos (optional)")
+    args = parser.parse_args()
+
+    if args.repo:
+        # Non-interactive mode (no prompts)
+        processor = RepoIngestor(github_token=args.token or None)
+        result = processor.ingest_repo(args.repo)
+        print("\nIngest result:")
+        print(result)
     else:
-        print(f"\n Failed: {result['error']}")
+        # Interactive mode (prompts user for input)
+        repo_input, token = prompt_repo_input()
+        processor = RepoIngestor(github_token=token)
+        result = processor.ingest_repo(repo_input)
+        print("\nIngest result:")
 
 
 @app.route('/ingest', methods=['POST'])
@@ -212,18 +280,9 @@ def ingest_repo():
     try:
         data = request.get_json()
         repo_link = data.get('repo_link')
-        processor = RepoIngestor()
+        github_token = data.get('github_token') or None
+        processor = RepoIngestor(github_token=github_token)
         result = processor.ingest_repo(repo_link)
         return jsonify(result)
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
-
-
-if __name__ == "__main__":
-    repo_url = input(" Enter GitHub repo URL: ").strip()
-    github_token = input(" Enter GitHub Personal Access Token (leave blank for public repo): ").strip() or None
-
-    processor = RepoIngestor(github_token=github_token)
-    result = processor.ingest_repo(repo_url)
-    print(result)
-    app.run(host='0.0.0.0', port=5000)

@@ -9,8 +9,7 @@ from sentence_transformers import SentenceTransformer
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from openai import OpenAI
 import glob
-from dotenv import load_dotenv
-load_dotenv()
+
 
 INDEX_BASE = "indexes"   # root folder for all repos
 
@@ -145,7 +144,7 @@ def ask_llm(prompt: str):
 def ask_llm(prompt: str):
     client = OpenAI(
         base_url="https://router.huggingface.co/v1",
-        api_key= os.environ.get("HF_API_KEY"),  # replace with your token
+        api_key= "...",  # replace with your token
     )
     completion = client.chat.completions.create(
         model="openai/gpt-oss-20b",
@@ -217,7 +216,7 @@ if __name__ == "__main__":
         if not retrieved:
             print(" No relevant chunks found.")
             continue
-
+                
         prompt = build_prompt(q, retrieved)
         answer = ask_llm(prompt)
         print("\n Answer:\n", answer)
